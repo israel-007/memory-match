@@ -1,0 +1,28 @@
+{
+  "name": "memory-match",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "assets": "capacitor-assets generate --android --iconBackgroundColor \"#856aff\" --splashBackgroundColor \"#080d1c\" --splashBackgroundColorDark \"#080d1c\"",
+    "sync": "cap sync android",
+    "android:tweak": "node scripts/android-tweaks.js",
+    "open": "cap open android",
+    "run": "cap run android",
+    "serve": "npx serve www"
+  },
+  "description": "Memory Match (Capacitor Android app)",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/splash-screen": "^8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.2"
+  }
+}

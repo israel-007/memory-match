@@ -1,0 +1,18 @@
+{
+  "appId": "com.memorymatch.app",
+  "appName": "Memory Match",
+  "webDir": "www",
+  "backgroundColor": "#080d1c",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true,
+      "backgroundColor": "#080d1c",
+      "showSpinner": false
+    },
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK"
+    }
+  }
+}

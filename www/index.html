@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080d1c">
+<title>Memory Match — Arcade</title>
+<meta name="theme-color" content="#080d1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{--bg:#080d1c;--panel:#111a30;--panel2:#17223d;--text:#f4f7ff;--muted:#8f9dbd;--purple:#9278ff;--cyan:#62e7ff;--green:#61efbd;--line:#ffffff12;--g1:#30245a;--g2:#0d6470;--acc1:#856aff;--acc2:#3fa9ff}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 15% 0%,color-mix(in srgb,var(--g1) 40%,transparent),transparent 38%),radial-gradient(ellipse at 100% 35%,color-mix(in srgb,var(--g2) 27%,transparent),transparent 34%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+button{font:inherit;color:inherit;cursor:pointer}
+.shell{width:min(900px,100%);margin:auto;padding:10px 12px 18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.brand{display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:900;letter-spacing:.1em}
+.brand-icon{width:31px;height:31px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,#9277ff,#45baff);box-shadow:0 4px 15px #826dff35}
+.header-actions{display:flex;gap:7px}
+.btn{border:0;border-radius:10px;padding:9px 13px;font-size:.83rem;font-weight:800;transition:filter .15s,transform .15s}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.primary{background:linear-gradient(135deg,#856aff,#539dff);box-shadow:0 5px 18px #7d68ff2b}
+.secondary{background:#1b2743;border:1px solid var(--line)}
+.icon-btn{width:36px;height:36px;padding:0;background:#ffffff09;border:1px solid var(--line);border-radius:10px}
+.info-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 9px}
+.stage-chip{font-size:.72rem;font-weight:850;letter-spacing:.08em;color:#c8c1ff;background:#8a73ff19;border:1px solid #8a73ff30;padding:6px 9px;border-radius:99px;white-space:nowrap}
+.clock-moves{display:flex;gap:8px}
+.mini-stat{display:flex;gap:6px;align-items:baseline;background:#ffffff08;border:1px solid var(--line);border-radius:9px;padding:5px 9px}
+.mini-stat label{font-size:.61rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.mini-stat strong{font-size:.9rem;font-variant-numeric:tabular-nums}
+.progress-track{height:4px;background:#202c47;border-radius:99px;overflow:hidden;margin-bottom:10px}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--purple),var(--cyan));transition:width .35s}
+.panel{background:linear-gradient(155deg,#111a30f2,#0c1428f2);border:1px solid var(--line);border-radius:17px;padding:10px;box-shadow:0 16px 48px #0002}
+.reward-row{display:flex;gap:7px;align-items:center;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap}
+.wallet{display:flex;gap:7px;align-items:center;font-size:.75rem;font-weight:800}
+.wallet-pill{background:#ffffff0a;border:1px solid var(--line);border-radius:99px;padding:6px 9px;color:#d7dcff}
+.power-btn{border:1px solid #61efbd40;background:linear-gradient(135deg,#14443e,#172a42);border-radius:10px;padding:8px 11px;font-weight:850;font-size:.75rem;color:#8fffd4}
+.power-btn:disabled{opacity:.5;cursor:not-allowed}
+.wallet-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.convert-btn{border:1px solid #9278ff55;background:#30265a;color:#d9d0ff;border-radius:10px;padding:8px 10px;font-size:.72rem;font-weight:850}
+.convert-input{width:100%;padding:12px;border-radius:10px;border:1px solid #ffffff25;background:#0b1327;color:var(--text);font:inherit;margin:5px 0 10px}
+.reward-note{font-size:.68rem;color:var(--muted);margin:0 0 7px;text-align:center}
+.board{display:grid;gap:clamp(3px,1vw,8px);width:100%;height:min(68dvh,640px);min-height:240px;margin:auto;align-content:stretch;justify-content:stretch}
+.card{position:relative;aspect-ratio:auto;height:100%;width:100%;border:0;padding:0;background:transparent;border-radius:10px;perspective:650px;min-width:0;min-height:0;-webkit-tap-highlight-color:transparent}
+.inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .36s cubic-bezier(.2,.7,.2,1)}
+.card.flipped .inner,.card.matched .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:9px;display:grid;place-items:center;backface-visibility:hidden;overflow:hidden}
+.back{background:linear-gradient(145deg,var(--back-a,#243353),var(--back-b,#16223f));border:1px solid var(--back-edge,#9aadea25);color:var(--back-ink,#8496c7)}
+.back:after{content:"";position:absolute;inset:3px;border:1px solid #a6b7ef12;border-radius:6px}
+.back span{font-size:clamp(.65rem,2.8vw,1.2rem);opacity:.65}
+.front{transform:rotateY(180deg);background:linear-gradient(145deg,#29395d,#1a2948);border:1px solid #63dfff38;font-size:clamp(1rem,5.4vw,2.5rem)}
+.matched .front{background:linear-gradient(145deg,#16404a,#123848);border-color:#61efbd80;box-shadow:inset 0 0 12px #61efbd12,0 0 12px #61efbd10}
+.card.matched{cursor:default}
+.card:disabled{opacity:1}
+.card.wrong{animation:nudge .28s}
+@keyframes nudge{25%,75%{transform:translateX(-2px)}50%,100%{transform:translateX(2px)}}
+.mini-stat.low strong{color:#ff7b8f}
+.card.deal{animation:dealIn .42s cubic-bezier(.2,.8,.25,1.2) var(--d,0ms) both}
+@keyframes dealIn{from{opacity:0;transform:translateY(18px) scale(.5) rotate(-8deg)}to{opacity:1;transform:none}}
+.back:before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--sweep,#62e7ff);opacity:0;pointer-events:none}
+.back span{position:relative;z-index:1}
+.card.sweep .back:before{animation:sweepFill .62s ease-in-out var(--d,0ms) backwards}
+.card.sweep .back{animation:sweepGlow .62s ease-in-out var(--d,0ms) backwards}
+.card.sweep .inner{animation:sweepLift .62s ease-in-out var(--d,0ms) backwards}
+@keyframes sweepFill{0%{opacity:0}35%{opacity:.9}100%{opacity:0}}
+@keyframes sweepGlow{0%,100%{box-shadow:0 0 0 transparent}35%{box-shadow:0 0 18px var(--sweep,#62e7ff)}}
+@keyframes sweepLift{0%,100%{transform:none}35%{transform:translateY(-4px) scale(1.07)}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:25;overflow:hidden}
+.puff{position:absolute;border-radius:50%;background:radial-gradient(circle,#fff,#d4ebffaa 55%,transparent 72%);animation:puff var(--t,800ms) cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes puff{0%{transform:translate(-50%,-50%) scale(1);opacity:.95}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.3);opacity:0}}
+.ring{position:absolute;width:20px;height:20px;border:2px solid #ffffffb0;border-radius:50%;transform:translate(-50%,-50%) scale(.4);animation:ring .6s ease-out forwards}
+@keyframes ring{to{transform:translate(-50%,-50%) scale(4);opacity:0}}
+.card.pop{animation:pop .42s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+
+/* ---------- HOME SCREEN ---------- */
+body.at-home .powerup-footer{display:none}
+.home{position:fixed;inset:0;z-index:12;display:none;overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(ellipse at 15% 0%,color-mix(in srgb,var(--g1) 53%,transparent),transparent 42%),radial-gradient(ellipse at 100% 40%,color-mix(in srgb,var(--g2) 33%,transparent),transparent 38%),var(--bg)}
+.home.show{display:block;animation:homeIn .35s ease}
+@keyframes homeIn{from{opacity:0}to{opacity:1}}
+.home-bg{position:fixed;inset:0;overflow:hidden;pointer-events:none}
+.fcard{position:absolute;bottom:-80px;width:46px;height:60px;border-radius:10px;display:grid;place-items:center;font-size:1.3rem;background:linear-gradient(145deg,#29395d,#1a2948);border:1px solid #63dfff30;opacity:0;animation:floatUp var(--t,14s) linear var(--d,0s) infinite}
+@keyframes floatUp{0%{transform:translateY(0) rotate(var(--r0,-12deg));opacity:0}10%{opacity:.3}90%{opacity:.3}100%{transform:translateY(-118dvh) rotate(var(--r1,14deg));opacity:0}}
+.home-inner{position:relative;z-index:1;width:min(520px,100%);margin:auto;padding:calc(12px + env(safe-area-inset-top)) 16px calc(26px + env(safe-area-inset-bottom))}
+.home-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hero{text-align:center;padding:18px 0 4px}
+.hero-logo{width:76px;height:76px;margin:0 auto 14px;border-radius:23px;display:grid;place-items:center;font-size:2.1rem;background:linear-gradient(135deg,#9277ff,#45baff);box-shadow:0 10px 38px #826dff66;animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) rotate(3deg)}}
+.hero-title{margin:0;font-size:clamp(2.2rem,10.5vw,3.3rem);line-height:.98;letter-spacing:-.04em;font-weight:950;background:linear-gradient(120deg,#fff,#c9c0ff 45%,#62e7ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-tag{color:var(--muted);font-size:.86rem;margin:11px 0 20px}
+.cta{width:100%;border:0;border-radius:19px;padding:17px 14px;background:linear-gradient(135deg,var(--acc1),var(--acc2));box-shadow:0 10px 32px #6f63ff55;display:flex;flex-direction:column;gap:4px;align-items:center;animation:ctaPulse 2.4s ease-in-out infinite;transition:transform .15s}
+.cta:hover{transform:translateY(-2px)}.cta:active{transform:scale(.98)}
+@keyframes ctaPulse{50%{box-shadow:0 10px 46px #62e7ff66}}
+.cta-main{font-size:1.2rem;font-weight:950}
+.cta-sub{font-size:.75rem;font-weight:700;opacity:.9}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:13px 0 16px}
+.chip{font-size:.72rem;font-weight:850;letter-spacing:.04em;color:#c8c1ff;background:#8a73ff19;border:1px solid #8a73ff30;padding:6px 10px;border-radius:99px}
+.chip.moves{color:#ffd66b;background:#ffd66b14;border-color:#ffd66b40}
+.chip.timed{color:var(--cyan);background:#62e7ff14;border-color:#62e7ff40}
+.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.hstat{background:#ffffff08;border:1px solid var(--line);border-radius:14px;padding:11px 6px;text-align:center}
+.hstat small{display:block;color:var(--muted);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.hstat strong{display:block;margin-top:5px;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.daily{display:flex;align-items:center;gap:11px;padding:12px;border-radius:16px;margin-bottom:12px;background:linear-gradient(135deg,#2a2457,#16304a);border:1px solid #9278ff40}
+.daily.claimed{background:#ffffff07;border-color:var(--line)}
+.daily-icon{font-size:1.7rem}
+.daily-text{flex:1;min-width:0}
+.daily-text b{display:block;font-size:.88rem}
+.daily-text span{font-size:.72rem;color:var(--muted)}
+.daily .btn{white-space:nowrap}
+.daily .btn:disabled{opacity:.45;cursor:default;transform:none;filter:none}
+.journey{background:linear-gradient(155deg,#111a30f2,#0c1428f2);border:1px solid var(--line);border-radius:18px;padding:14px 12px}
+.journey h3{margin:0 0 4px;font-size:.95rem;letter-spacing:-.01em}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.64rem;color:var(--muted);margin-bottom:11px}
+.map{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.tile{position:relative;aspect-ratio:1;border-radius:13px;border:1px solid var(--line);background:#ffffff08;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-weight:900;font-size:1rem;padding:0;animation:tileIn .35s ease both;animation-delay:var(--d,0ms)}
+@keyframes tileIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}}
+.tile small{font-size:.7rem;line-height:1;opacity:.9}
+.tile.cleared{background:linear-gradient(145deg,#16404a,#123848);border-color:#61efbd66;color:#8fffd4}
+.tile.current{background:linear-gradient(145deg,#4a3b9a,#2b2a6e);border-color:#a592ff;box-shadow:0 0 18px #9278ff66;animation:tileIn .35s ease both,tilePulse 2s ease-in-out infinite}
+@keyframes tilePulse{50%{box-shadow:0 0 26px #62e7ff77}}
+.tile.locked{opacity:.42;cursor:not-allowed}
+.tile.cp{border-style:dashed}
+.home-note{min-height:18px;margin-top:10px;text-align:center;font-size:.72rem;color:#c4baff;font-weight:700}
+.home-foot{display:flex;justify-content:center;gap:22px;margin-top:16px}
+.home-foot .secondary-action{margin:0}
+.how-list{list-style:none;margin:14px 0 6px;padding:0;text-align:left;display:grid;gap:9px}
+.how-list li{display:flex;gap:10px;font-size:.82rem;line-height:1.45;color:#c9d2ec;background:#0b1327;border:1px solid var(--line);border-radius:12px;padding:10px 11px}
+.how-list li span{font-size:1.1rem}
+.powerup-footer{gap:10px}
+.power-icon{position:relative}
+.pu-badge{position:absolute;top:-7px;right:-7px;min-width:20px;padding:2px 5px;border-radius:99px;background:#7d68ff;border:1px solid #ffffff40;font-style:normal;font-size:.62rem;font-weight:900;line-height:1.2;color:#fff}
+.pu-badge.price{background:#1b2743;color:#c9d2ec}
+.power-btn.on{box-shadow:0 0 0 2px #62e7ff,0 0 18px #62e7ff88}
+.mini-stat.frozen strong{color:var(--cyan)}
+.marketcard{width:100%;display:flex;align-items:center;gap:11px;padding:12px;border-radius:16px;margin-bottom:12px;text-align:left;background:linear-gradient(135deg,#153a44,#1d2a55);border:1px solid #62e7ff40}
+.mc-icon{font-size:1.7rem}
+.mc-text{flex:1;min-width:0}
+.mc-text b{display:block;font-size:.88rem}
+.mc-text span{font-size:.72rem;color:var(--muted);letter-spacing:.02em}
+.mc-go{font-size:1.5rem;color:var(--cyan)}
+.market{max-height:92dvh;overflow:auto}
+.market-balance{display:inline-block;margin:2px 0 10px;padding:6px 13px;border-radius:99px;background:#ffffff0a;border:1px solid var(--line);font-weight:800;font-size:.85rem}
+.market-list{display:grid;gap:8px;text-align:left}
+.mk-item{display:flex;align-items:center;gap:10px;background:#0b1327;border:1px solid var(--line);border-radius:14px;padding:10px}
+.mk-icon{font-size:1.6rem;width:38px;text-align:center}
+.mk-info{flex:1;min-width:0}
+.mk-info b{display:block;font-size:.88rem}
+.mk-info span{display:block;font-size:.7rem;color:var(--muted);line-height:1.35;margin:2px 0}
+.mk-info em{font-style:normal;font-size:.64rem;color:#b5a9ff;font-weight:800}
+.mk-buy{display:grid;gap:5px}
+.mk-btn{padding:7px 9px;font-size:.72rem;white-space:nowrap;margin:0!important;width:auto!important}
+.mk-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+.market .market-msg{min-height:18px;margin:10px 0 8px;font-size:.78rem;color:#8fffd4;font-weight:700}
+.ach-toast{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;z-index:60;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:16px;background:linear-gradient(135deg,#2b2a6e,#16304a);border:1px solid #a592ff80;box-shadow:0 10px 36px #0008;transform:translate(-50%,-170%);transition:transform .35s cubic-bezier(.2,.8,.2,1.1);pointer-events:none;max-width:92vw}
+.ach-toast.show{transform:translate(-50%,0)}
+.ach-toast>span{font-size:1.6rem}
+.ach-toast b{display:block;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:#c9c0ff}
+.ach-toast div span{font-size:.85rem;font-weight:800}
+.set-list{display:grid;gap:8px;text-align:left;margin:14px 0 10px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0b1327;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:.85rem;font-weight:700}
+.set-row small{display:block;color:var(--muted);font-weight:600;font-size:.68rem;margin-top:2px}
+.sw{position:relative;width:46px;height:26px;flex:none}
+.sw input{opacity:0;position:absolute;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;border-radius:99px;background:#27324f;transition:background .2s}
+.sw span:after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.sw input:checked+span{background:linear-gradient(135deg,var(--acc1),var(--acc2))}
+.sw input:checked+span:after{transform:translateX(20px)}
+.set-row input[type=range]{width:120px;accent-color:#856aff}
+.mini-btn{border:1px solid #9278ff55;background:#30265a;color:#d9d0ff;border-radius:10px;padding:7px 11px;font-size:.74rem;font-weight:850}
+.reduce-motion *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+.reduce-motion .home-bg{display:none}
+.ach{max-height:92dvh;overflow:auto}
+.ach-list{display:grid;gap:7px;text-align:left;margin:12px 0 10px}
+.ach-item{display:flex;gap:10px;align-items:center;background:#0b1327;border:1px solid var(--line);border-radius:13px;padding:9px 10px}
+.ach-item.locked{opacity:.58}
+.ach-item.locked .ach-ic{filter:grayscale(1)}
+.ach-item.done{border-color:#61efbd55}
+.ach-ic{font-size:1.5rem;width:36px;text-align:center}
+.ach-info{flex:1;min-width:0}
+.ach-info b{display:block;font-size:.82rem}
+.ach-info span{display:block;font-size:.68rem;color:var(--muted)}
+.ach-bar{height:4px;border-radius:9px;background:#202c47;margin-top:5px;overflow:hidden}
+.ach-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan))}
+.ach-rw{font-size:.7rem;font-weight:900;color:#8fffd4;white-space:nowrap}
+.tut-dots{display:flex;gap:6px;justify-content:center;margin-bottom:6px}
+.tut-dots i{width:8px;height:8px;border-radius:9px;background:#2a3657;transition:width .25s,background .25s}
+.tut-dots i.on{background:var(--purple);width:22px}
+.tut-board{display:grid;grid-template-columns:repeat(2,84px);grid-auto-rows:84px;gap:9px;justify-content:center;margin:14px auto 16px}
+.tut-board .card{height:100%}
+.modal.tut p{min-height:4.4em}
+.daily{flex-wrap:wrap}
+.streak-row{flex-basis:100%;display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:2px}
+.dcell{border-radius:10px;padding:5px 0 6px;text-align:center;background:#ffffff0a;border:1px solid var(--line);font-size:.95rem;line-height:1.2}
+.dcell small{display:block;font-size:.55rem;color:var(--muted);font-weight:800;letter-spacing:.05em}
+.dcell.done{background:#16404a;border-color:#61efbd66;color:#8fffd4}
+.dcell.today{border-color:#a592ff;background:#3a2f7a;box-shadow:0 0 14px #9278ff66}
+.dcell.tomorrow{border-style:dashed}
+html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+body{-webkit-user-select:none;user-select:none}
+.stars-row{font-size:2.3rem;letter-spacing:.12em;margin:2px 0 0;color:#ffd66b;text-shadow:0 0 18px #ffd66b66}
+.star{display:inline-block;opacity:.22;filter:grayscale(1);transform:scale(.6)}
+.star.on{animation:starPop .5s cubic-bezier(.2,1.6,.4,1) var(--sd,0s) forwards}
+@keyframes starPop{to{opacity:1;filter:none;transform:scale(1)}}
+.star-hint{font-size:.7rem;color:var(--muted);margin-bottom:6px}
+.tile .stars{color:#ffd66b;font-size:.6rem;letter-spacing:-.04em}
+.cpb{position:absolute;top:3px;right:4px;font-size:.58rem;font-style:normal}
+.jstars{float:right;font-size:.8rem;color:#ffd66b;font-weight:900}
+.mk-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 10px;background:#0b1327;border:1px solid var(--line);border-radius:12px;padding:4px}
+.mk-tab{border:0;border-radius:9px;padding:8px;font-weight:850;font-size:.78rem;background:transparent;color:var(--muted)}
+.mk-tab.on{background:linear-gradient(135deg,var(--acc1),var(--acc2));color:#fff}
+.mk-sec{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:900;margin:8px 2px 0}
+.swatch{width:38px;height:50px;border-radius:9px;display:grid;place-items:center;font-size:1.1rem;border:1px solid;flex:none}
+.swatch.theme{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.swatch.theme i{width:12px;height:12px;border-radius:50%}
+.streak-toast{text-align:center;min-height:22px;padding:4px 0 0;font-size:.76rem;color:#c4baff;font-weight:800;letter-spacing:.04em}
+.overlay{position:fixed;inset:0;display:none;place-items:center;padding:16px;background:#030714c9;backdrop-filter:blur(10px);z-index:20}
+.overlay.show{display:grid}
+.modal{width:min(410px,100%);padding:23px;border:1px solid #ffffff17;border-radius:22px;text-align:center;background:linear-gradient(155deg,#1b2645,#10182c);box-shadow:0 25px 90px #0007;animation:arrive .24s ease}
+@keyframes arrive{from{opacity:0;transform:translateY(9px) scale(.98)}to{opacity:1;transform:none}}
+.modal-symbol{font-size:2.8rem;line-height:1.2}
+.modal h1,.modal h2{margin:8px 0;font-size:1.7rem;letter-spacing:-.04em}
+.modal p{color:var(--muted);margin:8px 0 18px;line-height:1.5;font-size:.9rem}
+.modal .stage-pill{display:inline-block;margin:5px auto 0;padding:6px 11px;border-radius:50px;background:#8c73ff18;color:#c9c0ff;font-size:.75rem;font-weight:850;letter-spacing:.08em}
+.modal .btn{width:100%;padding:12px;margin-top:4px}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0}
+.result{background:#0b1327;border:1px solid var(--line);border-radius:12px;padding:11px}
+.result small{display:block;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.08em}
+.result strong{display:block;font-size:1.25rem;margin-top:4px}
+.secondary-action{display:block;margin:12px auto 0;border:0;background:none;color:#b8c6e5;font-size:.8rem;text-decoration:underline}
+#confetti{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:30}
+.confetti{position:absolute;top:-12px;width:7px;height:10px;animation:drop linear forwards}
+@keyframes drop{to{transform:translateY(110vh) rotate(720deg);opacity:.15}}
+@media(max-width:600px){.shell{padding:7px 8px 82px}.panel{padding:7px;border-radius:13px}.board{gap:4px}.card,.face{border-radius:7px}.back:after{inset:2px;border-radius:5px}.info-row{margin-bottom:6px}.progress-track{margin-bottom:7px}.mini-stat{padding:4px 7px}.mini-stat label{font-size:.56rem}.mini-stat strong{font-size:.82rem}.btn{padding:8px 10px;font-size:.76rem}.brand{font-size:.67rem}.brand-icon{width:28px;height:28px}.icon-btn{width:34px;height:34px}}
+@media(max-width:360px){.clock-moves{gap:4px}.mini-stat{gap:4px;padding:4px 5px}.stage-chip{padding:5px 7px;font-size:.65rem}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+.powerup-footer{position:fixed;z-index:15;left:0;right:0;bottom:0;padding:8px 12px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center;align-items:center;background:linear-gradient(180deg,transparent,#080d1cf2 42%);pointer-events:none}
+.powerup-footer .power-btn{pointer-events:auto}
+.power-icon{width:46px;height:46px;min-width:46px;padding:0;border-radius:15px;display:grid;place-items:center;font-size:1.35rem;box-shadow:0 6px 22px #61efbd24;border-color:#61efbd75}
+.shell{padding-bottom:82px}
+</style>
+</head>
+<body>
+<div id="confetti"></div>
+<div id="fx"></div>
+<div class="shell">
+<header>
+  <div class="brand"><div class="brand-icon">✦</div><span>MEMORY MATCH</span></div>
+  <div class="header-actions">
+    <button class="icon-btn home-link" title="Home" aria-label="Home">⌂</button>
+    <button class="icon-btn" id="convertIconBtn" title="Power-up Market" aria-label="Power-up Market">🛒</button>
+    <button class="icon-btn" id="pauseBtn" title="Pause game" aria-label="Pause game">Ⅱ</button>
+    <button class="icon-btn" id="soundBtn" title="Sound on/off" aria-label="Sound on/off">♫</button>
+    <button class="btn primary" id="newGameBtn">New game</button>
+  </div>
+</header>
+<div class="info-row">
+  <div class="stage-chip" id="stageLabel">STAGE 1 · 2 CARDS</div>
+  <div class="clock-moves">
+    <div class="mini-stat"><label>Time</label><strong id="time">00:00</strong></div>
+    <div class="mini-stat"><label>Moves</label><strong id="moves">0</strong></div>
+  </div>
+</div>
+<div class="progress-track"><div class="progress-fill" id="progress"></div></div>
+<div class="reward-row"><div class="wallet"><span class="wallet-pill">💎 <span id="points">0</span> SP</span><span class="wallet-pill">🎁 <span id="freeHints">1</span> free hints</span></div></div>
+<div class="reward-note" id="rewardNote">Match cards to earn points. Use the power-ups below to get ahead.</div>
+<main class="panel">
+  <div class="board" id="board" aria-label="Memory cards"></div>
+  <div class="streak-toast" id="streakToast"></div>
+</main>
+</div>
+
+<footer class="powerup-footer" id="puFooter" aria-label="Power-ups"></footer>
+
+
+<div class="home" id="home" aria-label="Home screen">
+  <div class="home-bg" id="homeBg"></div>
+  <div class="home-inner">
+    <div class="home-top">
+      <div class="wallet"><span class="wallet-pill">💎 <span id="homePoints">0</span> SP</span><span class="wallet-pill">🎁 <span id="homeHints">1</span></span></div>
+      <div class="header-actions">
+        <button class="icon-btn" id="homeConvertBtn" title="Power-up Market" aria-label="Power-up Market">🛒</button>
+        <button class="icon-btn" id="homeSoundBtn" title="Sound on/off" aria-label="Sound on/off">♫</button>
+        <button class="icon-btn" id="homeSettingsBtn" title="Settings" aria-label="Settings">⚙</button>
+        <button class="icon-btn" id="homeHowBtn" title="How to play" aria-label="How to play">?</button>
+      </div>
+    </div>
+    <section class="hero">
+      <div class="hero-logo">✦</div>
+      <h1 class="hero-title">MEMORY<br>MATCH</h1>
+      <p class="hero-tag">Flip. Remember. Match. Conquer every checkpoint.</p>
+    </section>
+    <button class="cta" id="homePlayBtn" type="button"><span class="cta-main" id="ctaMain">▶ Play · Stage 1</span><span class="cta-sub" id="ctaSub"></span></button>
+    <div class="chips" id="ctaChips"></div>
+    <div class="home-stats">
+      <div class="hstat"><small>Cleared</small><strong id="statCleared">0/25</strong></div>
+      <div class="hstat"><small>Total score</small><strong id="statScore">0</strong></div>
+      <div class="hstat"><small>Next checkpoint</small><strong id="statCheckpoint">—</strong></div>
+    </div>
+    <div class="daily" id="dailyCard">
+      <div class="daily-icon">🎁</div>
+      <div class="daily-text"><b id="dailyTitle">Daily gift</b><span id="dailySub">Claim 1 free hint every day.</span></div>
+      <button class="btn primary" id="dailyBtn" type="button">Claim</button>
+      <div class="streak-row" id="streakRow"></div>
+    </div>
+    <button class="marketcard" id="homeMarketBtn" type="button">
+      <span class="mc-icon">🛒</span>
+      <span class="mc-text"><b>Market</b><span id="homeOwned"></span></span>
+      <span class="mc-go">›</span>
+    </button>
+    <button class="marketcard achcard" id="homeAchBtn" type="button">
+      <span class="mc-icon">🏆</span>
+      <span class="mc-text"><b>Achievements</b><span id="homeAchCount">0 unlocked</span></span>
+      <span class="mc-go">›</span>
+    </button>
+    <section class="journey">
+      <h3>Your journey <span class="jstars" id="jStars"></span></h3>
+      <div class="legend"><span>★ Stars earned</span><span>▶ Current</span><span>👣 Limited moves</span><span>⏱ Timed</span><span>🔒 Locked</span></div>
+      <div class="map" id="stageMap"></div>
+      <div class="home-note" id="homeNote"></div>
+    </section>
+    <div class="home-foot">
+      <button class="secondary-action" id="homeHowLink" type="button">How to play</button>
+      <button class="secondary-action" id="homeResetBtn" type="button">Reset journey</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="howOverlay" role="dialog" aria-modal="true">
+  <div class="modal" style="max-height:90dvh;overflow:auto">
+    <div class="modal-symbol">📖</div>
+    <div class="stage-pill">HOW TO PLAY</div>
+    <h2>Train your memory</h2>
+    <ul class="how-list">
+      <li><span>🃏</span><div>Flip two cards to find a pair. Every stage adds one more pair.</div></li>
+      <li><span>🔥</span><div>Chain matches to build a streak. Every 3 in a row earns bonus SP.</div></li>
+      <li><span>👣</span><div>Checkpoints come every 3rd stage. Limited-moves checkpoints give you pairs + 7 moves, growing by 2 each time.</div></li>
+      <li><span>⏱</span><div>Timed checkpoints give unlimited moves, but you must clear the deck before the countdown ends.</div></li>
+      <li><span>✨</span><div>Hints reveal a matching pair briefly (max 2 per level). They cost 5 SP each.</div></li>
+      <li><span>🛒</span><div>Spend SP in the Market on power-ups: Hint ✨, Peek 👁, Time Freeze ❄️, Shield 🛡️ and Extra Moves ➕ (limited-moves checkpoints only). Use them from the bar at the bottom of the game.</div></li>
+    </ul>
+    <button class="btn primary" id="closeHowBtn">Got it</button>
+  </div>
+</div>
+<div class="overlay" id="welcome" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-symbol">🧠</div>
+    <div class="stage-pill" id="welcomeStage">STAGE 1</div>
+    <h1 id="welcomeTitle">Ready to play?</h1>
+    <p id="welcomeCopy">Flip two cards. Find the pair. Every match unlocks your next challenge.</p>
+    <button class="btn primary" id="startBtn">Start stage</button>
+    <button class="secondary-action" id="resetJourneyBtn">Reset journey to Stage 1</button>
+    <button class="secondary-action home-link">⌂ Back to home</button>
+  </div>
+</div>
+<div class="overlay" id="stageClear" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-symbol">✨</div>
+    <div class="stage-pill" id="clearStageLabel">STAGE CLEARED</div>
+    <h2 id="clearTitle">Nice memory!</h2>
+    <div class="stars-row" id="clearStars" aria-label="Star rating"></div>
+    <div class="star-hint" id="starHint"></div>
+    <p id="clearCopy">All cards found. Your next challenge is ready.</p>
+    <div class="result-grid">
+      <div class="result"><small>Stage score</small><strong id="resultScore">0</strong></div>
+      <div class="result"><small>Time</small><strong id="resultTime">00:00</strong></div>
+      <div class="result"><small>Moves</small><strong id="resultMoves">0</strong></div>
+      <div class="result"><small>Best score</small><strong id="resultBest">0</strong></div>
+    </div>
+    <button class="btn primary" id="continueBtn">Continue</button>
+    <button class="secondary-action home-link">⌂ Back to home</button>
+  </div>
+</div>
+<div class="overlay" id="stageFail" role="dialog" aria-modal="true"><div class="modal"><div class="modal-symbol">⏳</div><div class="stage-pill">LIMIT REACHED</div><h2 id="failTitle">Moves exhausted!</h2><p id="failCopy">Replay this stage to try again.</p><button class="btn primary" id="retryStageBtn">Replay stage</button><button class="secondary-action home-link">⌂ Back to home</button></div></div>
+<div class="overlay" id="pauseOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-symbol">⏸️</div><h2>Take a breather</h2><p>Your board is saved right here. Ready when you are.</p>
+    <button class="btn primary" id="resumeBtn">Resume</button>
+    <button class="secondary-action" id="pauseSettingsBtn">⚙ Settings</button>
+    <button class="secondary-action home-link">⌂ Back to home</button>
+  </div>
+</div>
+<div class="overlay" id="marketOverlay" role="dialog" aria-modal="true" aria-labelledby="marketTitle">
+  <div class="modal market">
+    <div class="modal-symbol">🛒</div>
+    <div class="stage-pill">MARKET</div>
+    <h2 id="marketTitle">Stock up</h2>
+    <div class="market-balance">💎 <b id="marketBalance">0</b> SP</div>
+    <div class="mk-tabs"><button class="mk-tab on" data-tab="power" type="button">Power-ups</button><button class="mk-tab" data-tab="cos" type="button">Cosmetics</button></div>
+    <div class="market-list" id="marketList"></div>
+    <p class="market-msg" id="marketMsg" aria-live="polite"></p>
+    <button class="btn primary" id="closeMarketBtn">Done</button>
+  </div>
+</div>
+<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal">
+    <div class="modal-symbol">⚙️</div>
+    <div class="stage-pill">SETTINGS</div>
+    <h2 id="settingsTitle">Settings</h2>
+    <div class="set-list">
+      <div class="set-row"><div>Music<small>Calm looping background track</small></div><label class="sw"><input type="checkbox" id="setMusic"><span></span></label></div>
+      <div class="set-row"><div>Music volume</div><input type="range" id="setVol" min="0" max="100" step="5"></div>
+      <div class="set-row"><div>Sound effects<small>Flips, matches, power-ups</small></div><label class="sw"><input type="checkbox" id="setSfx"><span></span></label></div>
+      <div class="set-row"><div>Vibration<small>Haptic feedback on supported phones</small></div><label class="sw"><input type="checkbox" id="setHaptics"><span></span></label></div>
+      <div class="set-row"><div>Reduce motion<small>Skips splashes, confetti and intros</small></div><label class="sw"><input type="checkbox" id="setReduce"><span></span></label></div>
+      <div class="set-row"><div>Tutorial</div><button class="mini-btn" id="replayTutBtn" type="button">Replay</button></div>
+    </div>
+    <button class="btn primary" id="closeSettingsBtn">Done</button>
+  </div>
+</div>
+<div class="overlay" id="achOverlay" role="dialog" aria-modal="true" aria-labelledby="achTitle">
+  <div class="modal ach">
+    <div class="modal-symbol">🏆</div>
+    <div class="stage-pill" id="achCount">0/0</div>
+    <h2 id="achTitle">Achievements</h2>
+    <div class="ach-list" id="achList"></div>
+    <button class="btn primary" id="closeAchBtn">Done</button>
+  </div>
+</div>
+<div class="overlay" id="tutorial" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+  <div class="modal tut">
+    <div class="tut-dots" id="tutDots"></div>
+    <div class="modal-symbol" id="tutIcon">👆</div>
+    <h2 id="tutTitle">Find the pairs</h2>
+    <p id="tutText"></p>
+    <div class="tut-board" id="tutBoard"></div>
+    <button class="btn primary" id="tutNext">Next</button>
+    <button class="secondary-action" id="tutSkip">Skip tutorial</button>
+  </div>
+</div>
+<div class="ach-toast" id="achToast" aria-live="polite"></div>
+<div class="toast" id="toast" style="display:none"></div>
+<script>
+(() => {
+"use strict";
+const $=id=>document.getElementById(id);
+const symbols=["🍉","🍓","🍋","🍇","🍒","🥝","🍍","🥥","🍑","🫐","🥑","🍊","🌈","⭐","🪐","🚀","🎮","🎧","💎","🦋","🐙","🦄","🍀","🔥","⚡","🌙","☀️","☁️","🎲","🎯","🧸","🎨","🧁","🍪","🐳","🦊","🐼","🐸","🌻","🍄","🧿","🛸","🎵","🏆","👾","🪼","🦕","🧩","🍭","🥁"];
+const MAX_STAGE=25, HINT_COST=5, MAX_HINTS=2;
+const defaultNote=()=>"Match cards to earn points. Use the power-ups below to get ahead.";
+let over=false, stage=1, unlocked=1, cards=[], deck=[], first=null, lock=false, moves=0, matches=0, score=0, streak=0, secs=0, timer=null, active=false, paused=false, soundOn=true, audio=null, points=Number(localStorage.getItem("mm-suggestion-points")||0), freeHints=Number(localStorage.getItem("mm-free-hints")||1), hintUsed=false, hintCount=0, pu={}, shieldOn=0, bonusMoves=0, freezeLeft=0, boardId=0, reveal=0, levelPU=false, inv=loadInv(), introToken=0, introBusy=false;
+const board=$("board");
+function loadInv(){try{return JSON.parse(localStorage.getItem("mm-inv")||"{}")||{};}catch(e){return {};}}
+const PU={
+ hint:{icon:"✨",name:"Hint",price:HINT_COST,limit:MAX_HINTS,desc:"Briefly reveals a matching pair."},
+ peek:{icon:"👁",name:"Peek",price:8,limit:Infinity,desc:"Flashes every hidden card for a few seconds."},
+ freeze:{icon:"❄️",name:"Time Freeze",price:6,limit:Infinity,desc:"Adds 10 seconds of frozen clock (stackable)."},
+ shield:{icon:"🛡️",name:"Shield",price:4,limit:Infinity,desc:"Your next miss costs no move and keeps your streak (stackable)."},
+ moves:{icon:"➕",name:"Extra Moves",price:6,limit:Infinity,desc:"+3 moves. Limited-moves checkpoints only."}
+};
+const packPrice=id=>Math.round(PU[id].price*3*0.85);
+const owned=id=>id==="hint"?freeHints:(inv[id]||0);
+const usedCount=id=>id==="hint"?hintCount:(pu[id]||0);
+function addOwned(id,n){if(id==="hint")freeHints+=n;else inv[id]=Math.max(0,(inv[id]||0)+n);}
+function cardCount(){return Math.min(2+(stage-1)*2,50);}
+function isCheckpoint(){return stage%3===0;}
+function checkpointNo(){return stage/3;}
+// Checkpoints alternate: 1st = limited moves, 2nd = timed, 3rd = limited moves, ...
+function isLimitedMode(){return isCheckpoint()&&checkpointNo()%2===1;}
+function isTimedMode(){return isCheckpoint()&&checkpointNo()%2===0;}
+// Limited-move checkpoints: pairs + 7, then +2 each time (9, 11, 13...)
+function moveLimit(){const n=(checkpointNo()+1)/2;return pairs()+5+2*n;}
+function extraMoves(){return moveLimit()-pairs();}
+function curLimit(){return moveLimit()+bonusMoves;}
+function showMoves(){$("moves").textContent=isLimitedMode()?`${moves}/${curLimit()}`:moves;}
+// Timed checkpoints: 10s per pair + 15s
+function timeLimit(){return pairs()*10+15;}
+function shownTime(){return isTimedMode()?Math.max(0,timeLimit()-secs):secs;}
+function refreshTime(){$("time").textContent=fmt(shownTime());$("time").parentElement.classList.toggle("low",isTimedMode()&&active&&timeLimit()-secs<=10);$("time").parentElement.classList.toggle("frozen",freezeLeft>0);}
+function saveGame(){if(over)return;localStorage.setItem("mm-current-game",JSON.stringify({stage,deck,moves,matches,score,streak,secs,active,hintCount,pu,shieldOn,bonusMoves,levelPU,matched:[...board.querySelectorAll(".card.matched")].map(c=>Number(c.dataset.index))}));}
+function pairs(){return cardCount()/2;}
+function stageKey(){return "mm-stage-score-"+stage;}
+function unlockKey(){return "mm-unlocked-stage";}
+function bestForStage(){return Number(localStorage.getItem(stageKey())||0);}
+function fmt(s){return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;}
+function shuffled(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function updateHeader(){
+  $("stageLabel").textContent=`STAGE ${stage}`;
+  $("time").previousElementSibling.textContent=isTimedMode()?"Time left":"Time";
+  refreshTime();showMoves();
+  $("progress").style.width=(matches/pairs()*100)+"%";
+  $("newGameBtn").textContent=active?"Restart":"New game";
+  if(isLimitedMode()){$("stageLabel").textContent+=" · LIMITED MOVES"; }
+  if(isTimedMode()){$("stageLabel").textContent+=" · TIMED"; }
+}
+function sound(freq=520,dur=.08,wave="sine"){
+ if(!soundOn)return;
+ try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();let o=audio.createOscillator(),g=audio.createGain();o.type=wave;o.frequency.value=freq;g.gain.setValueAtTime(.03,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur);}catch(e){}
+}
+function clockStart(){clearInterval(timer);timer=setInterval(()=>{if(active&&!paused){if(freezeLeft>0){freezeLeft--;$("rewardNote").textContent=freezeLeft>0?`❄️ Clock frozen · ${freezeLeft}s`:defaultNote();refreshTime();updateWallet();return;}secs++;refreshTime();saveGame();if(isTimedMode()&&secs>=timeLimit())stageFailed();}},1000);}
+function buildBoard(){
+  over=false;introToken++;introBusy=false;hintCount=0;pu={};shieldOn=0;bonusMoves=0;freezeLeft=0;reveal=0;levelPU=false;boardId++;clearInterval(timer);timer=null;active=false;paused=false;lock=false;first=null;moves=0;matches=0;score=0;streak=0;secs=0;hintUsed=false;
+  const count=cardCount();let saved=null;try{saved=JSON.parse(localStorage.getItem("mm-current-game")||"null");}catch(e){}
+  const restore=saved&&saved.active&&saved.stage===stage&&Array.isArray(saved.deck)&&saved.deck.length===count;
+  if(restore){deck=saved.deck;moves=saved.moves||0;matches=saved.matches||0;score=saved.score||0;streak=saved.streak||0;secs=saved.secs||0;active=!!saved.active;paused=active;hintCount=saved.hintCount||0;pu=saved.pu||{};shieldOn=saved.shieldOn|0;bonusMoves=saved.bonusMoves||0;levelPU=!!saved.levelPU;}
+  else{const selected=shuffled(activeSymbols().slice()).slice(0,count/2);deck=shuffled([...selected,...selected]);}
+  const availableW=board.clientWidth||700, availableH=board.clientHeight||500;let cols=2;let best=-Infinity;for(let c=2;c<=Math.min(count,10);c++){let r=Math.ceil(count/c),cell=Math.min((availableW-(c-1)*6)/c,(availableH-(r-1)*6)/r),scoreFit=cell-(Math.abs(c-r)*1.5);if(scoreFit>best){best=scoreFit;cols=c;}}
+  board.style.gridTemplateColumns=`repeat(${cols},minmax(0,1fr))`;board.style.gridTemplateRows=`repeat(${Math.ceil(count/cols)},minmax(0,1fr))`;board.innerHTML="";
+  deck.forEach((emoji,index)=>board.appendChild(makeCard(emoji,index)));
+  if(restore){(saved.matched||[]).forEach(i=>{const c=board.querySelector(`[data-index="${i}"]`);if(c){c.classList.add("matched");c.disabled=true;}});}
+  $("streakToast").textContent=restore?"Game restored. Resume when ready.":"";updateHeader();updateWallet();if(restore){$("welcome").classList.remove("show");$("pauseOverlay").classList.add("show");}else saveGame();
+}
+function makeCard(emoji,index){
+  const b=document.createElement("button");b.className="card";b.type="button";b.dataset.emoji=emoji;b.dataset.index=index;b.setAttribute("aria-label","Hidden card");
+  b.innerHTML=`<span class="inner"><span class="face back"><span>${curBack().glyph}</span></span><span class="face front">${emoji}</span></span>`;
+  b.addEventListener("click",()=>flip(b));return b;
+}
+function saveWallet(){localStorage.setItem("mm-suggestion-points",String(points));localStorage.setItem("mm-free-hints",String(freeHints));localStorage.setItem("mm-inv",JSON.stringify(inv));}
+function awardPoints(amount,reason){points+=amount;saveWallet();$("rewardNote").textContent=`+${amount} SP · ${reason}`;updateWallet();}
+function updateWallet(){
+ $("points").textContent=points;$("freeHints").textContent=freeHints;$("homePoints").textContent=points;$("homeHints").textContent=freeHints;
+ const ho=$("homeOwned");if(ho)ho.textContent="You own: "+Object.keys(PU).map(id=>`${PU[id].icon} ${owned(id)}`).join("  ");
+ Object.keys(PU).forEach(id=>{
+  const b=$("pu-"+id),d=PU[id];if(!b)return;
+  b.style.display=(id!=="moves"||isLimitedMode())?"":"none";
+  const own=owned(id),maxed=usedCount(id)>=d.limit;
+  b.disabled=!active||paused||maxed||(own<=0&&points<d.price);
+  const bd=b.querySelector(".pu-badge");bd.textContent=own>0?own:`${d.price}💎`;bd.classList.toggle("price",own<=0);
+  const t=maxed?`${d.name}: limit reached (${d.limit}/${d.limit} this level)`:`${d.name} · ${d.desc} · ${own>0?"owned "+own:d.price+" SP"} · ${id==="hint"?usedCount(id)+"/"+d.limit+" used":"no per-level limit"}`;
+  b.title=t;b.setAttribute("aria-label",t);
+  b.classList.toggle("on",(id==="shield"&&shieldOn>0)||(id==="freeze"&&freezeLeft>0));
+ });
+}
+function initFooter(){
+ const f=$("puFooter");
+ Object.keys(PU).forEach(id=>{const b=document.createElement("button");b.type="button";b.className="power-btn power-icon";b.id="pu-"+id;b.innerHTML=`<span>${PU[id].icon}</span><em class="pu-badge">0</em>`;b.addEventListener("click",()=>usePowerup(id));f.appendChild(b);});
+}
+function note(t){$("rewardNote").textContent=t;}
+const effects={
+ hint(){
+  const open=[...board.querySelectorAll(".card:not(.matched):not(.flipped)")];
+  const cands=open.filter(c=>open.some(o=>o!==c&&o.dataset.emoji===c.dataset.emoji));
+  if(!cands.length){note("No hint needed here: you already have one card of the last pair open.");return false;}
+  const pick=cands[Math.floor(Math.random()*cands.length)],mate=open.find(c=>c!==pick&&c.dataset.emoji===pick.dataset.emoji),bid=boardId;
+  hintUsed=true;reveal++;pick.classList.add("flipped");mate.classList.add("flipped");
+  pick.setAttribute("aria-label","Hint revealed "+pick.dataset.emoji);mate.setAttribute("aria-label","Hint revealed "+mate.dataset.emoji);
+  note(`Suggested pair revealed! Remember their positions. (${hintCount+1}/${MAX_HINTS} hints used)`);sound(760,.1);
+  setTimeout(()=>{if(bid!==boardId)return;pick.classList.remove("flipped");mate.classList.remove("flipped");pick.setAttribute("aria-label","Hidden card");mate.setAttribute("aria-label","Hidden card");reveal=Math.max(0,reveal-1);note(defaultNote());updateWallet();},1400);
+  return true;
+ },
+ peek(){
+  const hidden=[...board.querySelectorAll(".card:not(.matched):not(.flipped)")];if(hidden.length<2)return false;
+  const bid=boardId;reveal++;hidden.forEach(c=>c.classList.add("flipped"));note("👁 Peek! Memorise as many as you can.");sound(820,.12);
+  setTimeout(()=>{if(bid!==boardId)return;hidden.forEach(c=>c.classList.remove("flipped"));reveal=Math.max(0,reveal-1);note(defaultNote());updateWallet();},Math.min(3000,1200+hidden.length*60));
+  return true;
+ },
+ freeze(){freezeLeft+=10;note(`❄️ Clock frozen · ${freezeLeft}s`);sound(900,.12);refreshTime();return true;},
+ shield(){shieldOn++;$("streakToast").textContent="🛡️ Shield ready: your next miss is free!";note("🛡️ Shield active.");sound(640,.12);return true;},
+ moves(){if(!isLimitedMode())return false;bonusMoves+=3;showMoves();note("➕ +3 moves added!");sound(700,.1);return true;}
+};
+function usePowerup(id){
+ if(!active||paused)return;
+ const d=PU[id];
+ if(usedCount(id)>=d.limit){note(`${d.name} limit reached · max ${d.limit} per level.`);return;}
+ if(owned(id)<=0&&points<d.price)return;
+ if(!effects[id]())return;
+ if(owned(id)>0)addOwned(id,-1);else points-=d.price;
+ if(id==="hint")hintCount++;else pu[id]=(pu[id]||0)+1;
+ levelPU=true;stats.use[id]=(stats.use[id]||0)+1;saveStats();haptic(18);checkAchievements();
+ saveWallet();saveGame();updateWallet();
+}
+function renderMarket(){
+ $("marketBalance").textContent=points;
+ document.querySelectorAll(".mk-tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===marketTab));
+ if(marketTab==="cos"){renderCosList();return;}
+ $("marketList").innerHTML=Object.keys(PU).map(id=>{const d=PU[id],p3=packPrice(id);
+  return `<div class="mk-item"><div class="mk-icon">${d.icon}</div><div class="mk-info"><b>${d.name}</b><span>${d.desc}</span><em>${d.limit<Infinity?"Max "+d.limit+" per level · ":""}Owned ${owned(id)}</em></div><div class="mk-buy"><button class="btn secondary mk-btn" data-buy="${id}" data-qty="1" ${points<d.price?"disabled":""}>Buy · ${d.price} 💎</button><button class="btn primary mk-btn" data-buy="${id}" data-qty="3" ${points<p3?"disabled":""}>×3 · ${p3} 💎</button></div></div>`;}).join("");
+}
+function openMarket(){
+ if(introBusy)return;
+ if(active&&!paused)pauseGame();
+ $("marketMsg").textContent="";renderMarket();$("marketOverlay").classList.add("show");
+}
+function buyPowerup(id,qty){
+ const d=PU[id],cost=qty===3?packPrice(id):d.price;
+ if(points<cost){$("marketMsg").textContent="Not enough SP.";return;}
+ points-=cost;addOwned(id,qty);saveWallet();updateWallet();renderMarket();stats.shopped=true;saveStats();haptic(12);checkAchievements();
+ $("marketMsg").textContent=`Bought ${qty>1?"×"+qty+" ":""}${d.name}!`;sound(700,.08);setTimeout(()=>sound(900,.08),70);
+}
+function flip(card){
+ if(!active||paused||lock||reveal>0||card.classList.contains("flipped")||card.classList.contains("matched"))return;
+ if(!timer)clockStart();
+ card.classList.add("flipped");card.setAttribute("aria-label","Revealed card "+card.dataset.emoji);sound(440,.05);haptic(6);
+ if(!first){first=card;saveGame();return;}
+ moves++;showMoves();saveGame();lock=true;const second=card;
+ if(first.dataset.emoji===second.dataset.emoji){
+   streak++;matches++;stats.matches++;if(streak>stats.bestStreak)stats.bestStreak=streak;saveStats();checkAchievements();
+   awardPoints(1,"match found!");if(streak%3===0)awardPoints(1,"3-match streak bonus!");
+   const add=120+Math.min(streak-1,8)*30;score+=add;
+   first.classList.add("matched");second.classList.add("matched");first.disabled=second.disabled=true;
+   first.setAttribute("aria-label","Matched "+first.dataset.emoji);second.setAttribute("aria-label","Matched "+second.dataset.emoji);
+   $("streakToast").textContent=streak>1?`🔥 ${streak} MATCH STREAK · +${add}`:`✨ MATCH · +${add}`;
+   splash(first,streak);splash(second,streak);haptic([12,40,22]);
+   sound(680,.12);setTimeout(()=>sound(850,.12),65);
+   first=null;lock=false;updateHeader();
+   if(matches===pairs())stageComplete();else if(isLimitedMode()&&moves>=curLimit())stageFailed();else saveGame();
+ }else{
+   if(shieldOn>0){shieldOn--;moves--;showMoves();haptic(10);$("streakToast").textContent="🛡️ Shield used: no move spent, streak kept!";}else{haptic(32);streak=0;$("streakToast").textContent="Not a match — try again!";}
+   const a=first;first=null;
+   setTimeout(()=>{a.classList.remove("flipped");second.classList.remove("flipped");a.setAttribute("aria-label","Hidden card");second.setAttribute("aria-label","Hidden card");a.classList.add("wrong");second.classList.add("wrong");setTimeout(()=>{a.classList.remove("wrong");second.classList.remove("wrong");lock=false;if(isLimitedMode()&&moves>=curLimit())stageFailed();else saveGame();},300);},650);
+ }
+}
+function splash(card,power){
+ if(settings.reduceMotion||(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches))return;
+ const r=card.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,fx=$("fx"),n=14+Math.min(power,6)*2;
+ const ring=document.createElement("i");ring.className="ring";ring.style.left=x+"px";ring.style.top=y+"px";fx.appendChild(ring);setTimeout(()=>ring.remove(),700);
+ for(let i=0;i<n;i++){
+  const p=document.createElement("i"),a=Math.random()*Math.PI*2,d=Math.min(r.width,r.height)*(.5+Math.random()*.9)+14,size=4+Math.random()*8;
+  p.className="puff";p.style.left=x+"px";p.style.top=y+"px";p.style.width=p.style.height=size+"px";
+  p.style.setProperty("--dx",Math.cos(a)*d+"px");p.style.setProperty("--dy",(Math.sin(a)*d+14)+"px");p.style.setProperty("--t",(600+Math.random()*500)+"ms");
+  fx.appendChild(p);setTimeout(()=>p.remove(),1200);
+ }
+ card.classList.add("pop");setTimeout(()=>card.classList.remove("pop"),450);
+}
+function runIntro(cb){
+ if(settings.reduceMotion){introToken++;introBusy=false;cb();return;}
+ const token=++introToken;introBusy=true;
+ const list=[...board.children],n=list.length,dealStep=Math.min(60,700/n),sweepStep=Math.min(50,700/n);
+ $("streakToast").textContent="Get ready…";
+ list.forEach((c,i)=>{c.style.setProperty("--d",(i*dealStep)+"ms");c.classList.add("deal");});
+ setTimeout(()=>{
+  if(token!==introToken)return;
+  sound(520,.1);
+  list.forEach((c,i)=>{c.classList.remove("deal");c.style.setProperty("--d",(i*sweepStep)+"ms");c.style.setProperty("--sweep",`hsl(${190+i/Math.max(1,n-1)*170} 95% 62%)`);c.classList.add("sweep");});
+  setTimeout(()=>{
+   if(token!==introToken)return;
+   list.forEach(c=>{c.classList.remove("sweep");c.style.removeProperty("--d");c.style.removeProperty("--sweep");});
+   introBusy=false;$("streakToast").textContent="";cb();
+  },(n-1)*sweepStep+640);
+ },(n-1)*dealStep+440);
+}
+function stageComplete(){
+ over=true;freezeLeft=0;shieldOn=0;localStorage.removeItem("mm-current-game");clearInterval(timer);timer=null;active=false;
+ // Score rewards accuracy, speed, and streak. It is only shown after all cards are found.
+ const accuracy=Math.max(0,Math.round(1000-(moves-pairs())*45));
+ const speed=Math.max(0,Math.round(600-secs*5));
+ score+=accuracy+speed;
+ awardPoints(3,"stage completion reward!");if(stage%3===0){freeHints++;saveWallet();$("rewardNote").textContent="🎁 Bonus free hint unlocked for completing Stage "+stage+"!";updateWallet();}
+ const old=bestForStage();if(score>old)localStorage.setItem(stageKey(),String(score));
+ const st=calcStars(),oldSt=bestStars(stage),gain=Math.max(0,st-oldSt);if(st>oldSt)localStorage.setItem(starKey(stage),String(st));if(gain>0){points+=gain;saveWallet();updateWallet();}lastStars=st;
+ unlocked=Math.max(unlocked,stage+1);localStorage.setItem(unlockKey(),String(unlocked));recordStageClear();
+ $("clearStageLabel").textContent=`STAGE ${stage} CLEARED`;
+ $("clearTitle").textContent=streak>=3?"Unstoppable!":"Nice memory!";
+ $("clearCopy").textContent=streak>=3?"You caught a streak bonus. Keep that momentum going.":"All cards found. Your next challenge is ready.";
+ $("resultScore").textContent=score.toLocaleString();$("resultTime").textContent=fmt(secs);$("resultMoves").textContent=moves;
+ $("resultBest").textContent=Math.max(score,old).toLocaleString();
+ $("continueBtn").textContent=stage>=MAX_STAGE?"Journey complete — replay":"Continue to Stage "+(stage+1);
+ $("clearStars").innerHTML=[1,2,3].map(i=>`<span class="star ${i<=st?"on":""}" style="--sd:${(i*.25).toFixed(2)}s">★</span>`).join("");
+ $("starHint").textContent=isTimedMode()?"3★ = finish with 35%+ of the time left":`3★ = ${Math.ceil(pairs()*.5)} miss${Math.ceil(pairs()*.5)===1?"":"es"} or fewer`;
+ if(gain>0)$("clearCopy").textContent+=` ⭐ +${gain} SP star bonus!`;
+ for(let i=1;i<=st;i++)setTimeout(()=>{sound(560+i*120,.09);haptic(8);},i*250+150);
+ $("stageClear").classList.add("show");celebrate();haptic([30,50,30,50,80]);
+}
+function stageFailed(){over=true;freezeLeft=0;shieldOn=0;clearInterval(timer);timer=null;active=false;paused=false;lock=false;localStorage.removeItem("mm-current-game");refreshTime();
+ if(isTimedMode()){$("failTitle").textContent="Time's up!";$("failCopy").textContent=`The countdown reached zero before you cleared the deck. Replay Stage ${stage} to try again.`;}
+ else{$("failTitle").textContent="Moves exhausted!";$("failCopy").textContent=`You used all ${curLimit()} moves. Replay Stage ${stage} to try again.`;}$("stageFail").classList.add("show");haptic(120);updateWallet();}
+function celebrate(){
+ if(settings.reduceMotion)return;
+ const root=$("confetti");root.innerHTML="";const colors=["#9178ff","#62e7ff","#61efbd","#ff7bc9","#ffd66b"];
+ for(let i=0;i<65;i++){let p=document.createElement("i");p.className="confetti";p.style.left=Math.random()*100+"%";p.style.background=colors[i%colors.length];p.style.animationDuration=(1.7+Math.random()*2)+"s";p.style.animationDelay=Math.random()*.3+"s";root.appendChild(p);}
+ setTimeout(()=>root.innerHTML="",4000);
+}
+function showWelcome(nextStage){
+ stage=nextStage;buildBoard();
+ $("welcomeStage").textContent=`STAGE ${stage} · ${cardCount()} CARDS`;
+ $("welcomeTitle").textContent=stage===1?"Ready to play?":"Ready for the next level?";
+ $("welcomeCopy").textContent=isLimitedMode()?`Checkpoint · Limited Moves! Match all ${pairs()} pairs in ${moveLimit()} moves (${pairs()} pairs + ${extraMoves()} spare). Each two-card flip counts as one move. Run out of moves and you replay this stage.`:isTimedMode()?`Checkpoint · Timed! Match all ${pairs()} pairs before the countdown hits zero. You have ${fmt(timeLimit())} and unlimited moves. The clock starts when you tap Start. If time runs out, you replay this stage.`:(stage===1?"Flip two cards. Find the pair. Every match unlocks your next challenge.":`Stage ${stage-1} complete. Now match ${pairs()} pairs to move forward.`);
+ $("welcomeCopy").textContent+=` Hints reveal a matching pair: max ${MAX_HINTS} per level. Power-ups below can help.`;
+ $("startBtn").textContent=stage===1?"Start stage":`Start Stage ${stage}`;
+ $("welcome").classList.add("show");
+ $("stageClear").classList.remove("show");
+}
+function beginPlay(){active=true;paused=false;clockStart();updateHeader();updateWallet();saveGame();sound(580,.08);}
+function startStage(){if(introBusy)return;$("welcome").classList.remove("show");runIntro(beginPlay);}
+function restartCurrent(){localStorage.removeItem("mm-current-game");buildBoard();$("welcome").classList.remove("show");runIntro(beginPlay);}
+function resetJourney(){
+  // Reset the complete Memory Match journey, including the reward wallet and hints.
+  for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key&&key.startsWith("mm-"))localStorage.removeItem(key);}
+  stage=1;unlocked=1;points=0;freeHints=1;hintUsed=false;inv={};stats=defStats();ach={};cos=defCos();applyCosmetics();
+  showWelcome(1);updateWallet();
+  $("rewardNote").textContent="Journey reset. Start fresh and earn new suggestion points.";
+}
+function pauseGame(){if(!active)return;paused=true;$("pauseOverlay").classList.add("show");clearInterval(timer);timer=null;saveGame();updateWallet();}
+function resumeGame(){if(!active||$("home").classList.contains("show"))return;paused=false;$("pauseOverlay").classList.remove("show");clockStart();saveGame();updateWallet();}
+$("startBtn").addEventListener("click",startStage);
+$("newGameBtn").addEventListener("click",()=>{if(introBusy)return;if(active)restartCurrent();else showWelcome(1);});
+$("continueBtn").addEventListener("click",()=>{if(stage>=MAX_STAGE){showWelcome(1);return;}showWelcome(stage+1);});
+$("resetJourneyBtn").addEventListener("click",resetJourney);
+$("soundBtn").addEventListener("click",()=>{const on=!(settings.sfx||settings.music);settings.sfx=settings.music=on;saveSettings();syncSettingsUI();if(on)sound(600);});
+$("pauseBtn").addEventListener("click",pauseGame);
+$("resumeBtn").addEventListener("click",resumeGame);
+$("retryStageBtn").addEventListener("click",()=>{$("stageFail").classList.remove("show");restartCurrent();});
+$("convertIconBtn").addEventListener("click",openMarket);
+$("closeMarketBtn").addEventListener("click",()=>$("marketOverlay").classList.remove("show"));
+$("marketOverlay").addEventListener("click",e=>{if(e.target===$("marketOverlay"))$("marketOverlay").classList.remove("show");});
+$("marketList").addEventListener("click",e=>{
+ const c=e.target.closest("[data-cos]");if(c&&!c.disabled){const [t,i]=c.dataset.cos.split(":");cosAction(t,i);return;}
+ const b=e.target.closest("[data-buy]");if(b&&!b.disabled)buyPowerup(b.dataset.buy,Number(b.dataset.qty));
+});
+document.querySelectorAll(".mk-tab").forEach(t=>t.addEventListener("click",()=>{marketTab=t.dataset.tab;$("marketMsg").textContent="";renderMarket();}));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){resumeGame();$("marketOverlay").classList.remove("show");$("howOverlay").classList.remove("show");$("settingsOverlay").classList.remove("show");$("achOverlay").classList.remove("show");}});
+
+// ---------- Settings, music, haptics ----------
+const DEFAULT_SET={music:true,sfx:true,musicVol:.5,haptics:true,reduceMotion:false};
+function loadSettings(){try{return Object.assign({},DEFAULT_SET,JSON.parse(localStorage.getItem("mmx-settings")||"{}"));}catch(e){return Object.assign({},DEFAULT_SET);}}
+let settings=loadSettings(),audioUnlocked=false;
+function haptic(p){
+ if(!settings.haptics)return;
+ const H=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Haptics;
+ if(H){try{const t=Array.isArray(p)?p.reduce((x,y)=>x+y,0):p;H.impact({style:t>=100?"HEAVY":t>=45?"MEDIUM":"LIGHT"});}catch(e){}return;}
+ try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}
+}
+const MUSIC_MAX=.14,PROG=[[57,60,64],[53,57,60],[48,52,55],[55,59,62]],ARP=[0,1,2,1,2,1,2,1];
+const Music={on:false,timer:null,step:0,next:0,gain:null};
+const mf=n=>440*Math.pow(2,(n-69)/12);
+function mNote(t,f,dur,vol,type){const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(Music.gain);o.start(t);o.stop(t+dur+.05);}
+function musicTick(){
+ if(!Music.on||!audio)return;
+ const E=.34;
+ while(Music.next<audio.currentTime+.8){
+  const ch=PROG[Math.floor(Music.step/8)%PROG.length],pos=Music.step%8,t=Music.next;
+  if(pos===0){mNote(t,mf(ch[0]-12),E*7.5,.55,"sine");mNote(t,mf(ch[1]),E*7.5,.12,"triangle");}
+  mNote(t,mf(ch[ARP[pos]]+12),E*1.8,.28,"triangle");
+  if(pos===4&&Math.random()<.5)mNote(t+E*.5,mf(ch[2]+24),E*2,.09,"sine");
+  Music.next+=E;Music.step++;
+ }
+}
+function startMusic(){
+ if(Music.on)return;
+ try{
+  audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume();
+  if(!Music.gain){Music.gain=audio.createGain();Music.gain.connect(audio.destination);}
+  Music.gain.gain.cancelScheduledValues(audio.currentTime);Music.gain.gain.value=settings.musicVol*MUSIC_MAX;
+  Music.next=audio.currentTime+.1;Music.on=true;Music.timer=setInterval(musicTick,250);musicTick();
+ }catch(e){}
+}
+function stopMusic(){if(!Music.on)return;Music.on=false;clearInterval(Music.timer);try{Music.gain.gain.setTargetAtTime(0,audio.currentTime,.05);}catch(e){}}
+function applySettings(){
+ soundOn=settings.sfx;document.documentElement.classList.toggle("reduce-motion",settings.reduceMotion);
+ $("soundBtn").textContent=$("homeSoundBtn").textContent=(settings.sfx||settings.music)?"♫":"♩";
+ if(!settings.music)stopMusic();
+ else if(audioUnlocked){if(Music.on&&audio)Music.gain.gain.setTargetAtTime(settings.musicVol*MUSIC_MAX,audio.currentTime,.05);else startMusic();}
+}
+function saveSettings(){localStorage.setItem("mmx-settings",JSON.stringify(settings));applySettings();}
+function syncSettingsUI(){$("setMusic").checked=settings.music;$("setVol").value=Math.round(settings.musicVol*100);$("setSfx").checked=settings.sfx;$("setHaptics").checked=settings.haptics;$("setReduce").checked=settings.reduceMotion;}
+function openSettings(){syncSettingsUI();$("settingsOverlay").classList.add("show");}
+function unlockAudio(){if(audioUnlocked)return;audioUnlocked=true;if(settings.music)startMusic();else if(audio&&audio.state==="suspended")audio.resume();}
+document.addEventListener("pointerdown",unlockAudio,{once:true});document.addEventListener("keydown",unlockAudio,{once:true});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&active&&!paused&&!introBusy)pauseGame();if(!audio)return;try{document.hidden?audio.suspend():audio.resume();}catch(e){}});
+
+// ---------- Stats & achievements ----------
+function defStats(){return {matches:0,bestStreak:0,maxCleared:0,use:{},flawless:false,noPU:false,fast:false,cpMoves:false,cpTimed:false,shopped:false,bestDaily:0,stars:0,star3big:false,cosmetic:false};}
+function loadStats(){try{return Object.assign(defStats(),JSON.parse(localStorage.getItem("mm-stats")||"{}"));}catch(e){return defStats();}}
+function loadAch(){try{return JSON.parse(localStorage.getItem("mm-ach")||"{}")||{};}catch(e){return {};}}
+let stats=loadStats(),ach=loadAch(),achQueue=[],achShowing=false;
+function saveStats(){localStorage.setItem("mm-stats",JSON.stringify(stats));}
+const kitCount=u=>["hint","peek","freeze","shield","moves"].filter(k=>(u||{})[k]).length;
+const ACH=[
+ {id:"first",icon:"🎯",name:"First Match",desc:"Find your first pair.",sp:2,test:x=>x.matches>=1},
+ {id:"c100",icon:"🃏",name:"Century",desc:"Find 100 pairs in total.",sp:5,test:x=>x.matches>=100,prog:x=>[x.matches,100]},
+ {id:"s5",icon:"🔥",name:"On Fire",desc:"Chain 5 matches in a row.",sp:3,test:x=>x.bestStreak>=5,prog:x=>[x.bestStreak,5]},
+ {id:"s10",icon:"☄️",name:"Unstoppable",desc:"Chain 10 matches in a row.",sp:6,test:x=>x.bestStreak>=10,prog:x=>[x.bestStreak,10]},
+ {id:"st5",icon:"🌟",name:"Getting Warm",desc:"Clear Stage 5.",sp:3,test:x=>x.maxCleared>=5,prog:x=>[x.maxCleared,5]},
+ {id:"st10",icon:"🏅",name:"Double Digits",desc:"Clear Stage 10.",sp:6,test:x=>x.maxCleared>=10,prog:x=>[x.maxCleared,10]},
+ {id:"st25",icon:"🏆",name:"Memory Master",desc:"Clear Stage 25.",sp:15,test:x=>x.maxCleared>=25,prog:x=>[x.maxCleared,25]},
+ {id:"flaw",icon:"✨",name:"Flawless",desc:"Clear a stage of 3+ pairs with no misses.",sp:4,test:x=>x.flawless},
+ {id:"pure",icon:"🧠",name:"Pure Memory",desc:"Clear Stage 4+ without any power-ups.",sp:5,test:x=>x.noPU},
+ {id:"fast",icon:"⚡",name:"Lightning",desc:"Clear Stage 4+ in under 25 seconds.",sp:5,test:x=>x.fast},
+ {id:"cpm",icon:"👣",name:"Tight Squeeze",desc:"Clear a limited-moves checkpoint.",sp:5,test:x=>x.cpMoves},
+ {id:"cpt",icon:"⏱",name:"Beat the Clock",desc:"Clear a timed checkpoint.",sp:5,test:x=>x.cpTimed},
+ {id:"shop",icon:"🛒",name:"Shopper",desc:"Buy a power-up in the Market.",sp:2,test:x=>x.shopped},
+ {id:"kit",icon:"🎛️",name:"Full Kit",desc:"Use all 5 power-ups at least once.",sp:6,test:x=>kitCount(x.use)>=5,prog:x=>[kitCount(x.use),5]},
+ {id:"d3",icon:"📅",name:"Regular",desc:"Reach a 3-day daily streak.",sp:3,test:x=>x.bestDaily>=3,prog:x=>[x.bestDaily,3]},
+ {id:"d7",icon:"💎",name:"Dedicated",desc:"Reach a 7-day daily streak.",sp:8,test:x=>x.bestDaily>=7,prog:x=>[x.bestDaily,7]},
+ {id:"star3",icon:"⭐",name:"Triple Star",desc:"Earn 3 stars on a stage with 5+ pairs.",sp:4,test:x=>x.star3big},
+ {id:"stars30",icon:"🌠",name:"Star Collector",desc:"Collect 30 stars in total.",sp:8,test:x=>x.stars>=30,prog:x=>[x.stars,30]},
+ {id:"style",icon:"🎨",name:"Fashionista",desc:"Buy a cosmetic in the Market.",sp:3,test:x=>x.cosmetic}
+];
+function checkAchievements(){
+ let any=false;
+ ACH.forEach(a=>{if(!ach[a.id]&&a.test(stats)){ach[a.id]=1;points+=a.sp;achQueue.push(a);any=true;}});
+ if(any){localStorage.setItem("mm-ach",JSON.stringify(ach));saveWallet();updateWallet();$("homeAchCount").textContent=`${Object.keys(ach).length}/${ACH.length} unlocked`;showNextAch();}
+}
+function showNextAch(){
+ if(achShowing||!achQueue.length)return;achShowing=true;
+ const a=achQueue.shift(),t=$("achToast");
+ t.innerHTML=`<span>${a.icon}</span><div><b>Achievement unlocked</b><span>${a.name} · +${a.sp} 💎</span></div>`;t.classList.add("show");
+ haptic([20,40,20]);sound(780,.1);setTimeout(()=>sound(980,.12),90);
+ setTimeout(()=>{t.classList.remove("show");setTimeout(()=>{achShowing=false;showNextAch();},380);},2800);
+}
+function recordStageClear(){
+ stats.stars=totalStars();if(lastStars===3&&pairs()>=5)stats.star3big=true;
+ stats.maxCleared=Math.max(stats.maxCleared||0,stage);
+ if(pairs()>=3&&moves<=pairs())stats.flawless=true;
+ if(stage>=4&&!levelPU)stats.noPU=true;
+ if(stage>=4&&secs<25)stats.fast=true;
+ if(isLimitedMode())stats.cpMoves=true;
+ if(isTimedMode())stats.cpTimed=true;
+ saveStats();checkAchievements();
+}
+function renderAch(){
+ const n=Object.keys(ach).length;$("achCount").textContent=`${n}/${ACH.length} UNLOCKED`;
+ $("achList").innerHTML=ACH.map(a=>{
+  const done=!!ach[a.id],p=a.prog?a.prog(stats):null,bar=(!done&&p)?`<div class="ach-bar"><i style="width:${Math.min(100,Math.round(p[0]/p[1]*100))}%"></i></div>`:"";
+  return `<div class="ach-item ${done?"done":"locked"}"><div class="ach-ic">${a.icon}</div><div class="ach-info"><b>${a.name}</b><span>${a.desc}${(!done&&p)?` (${Math.min(p[0],p[1])}/${p[1]})`:""}</span>${bar}</div><div class="ach-rw">${done?"✓":"+"+a.sp+" 💎"}</div></div>`;}).join("");
+}
+function openAch(){renderAch();$("achOverlay").classList.add("show");}
+
+// ---------- Daily streak ----------
+const DAILY=[
+ {icon:"🎁",label:"Demo",apply:()=>{points+=3000;}},
+//  {icon:"🎁",label:"+1 hint",apply:()=>addOwned("hint",1)},
+ {icon:"💎",label:"+3 SP",apply:()=>{points+=3;}},
+ {icon:"🛡️",label:"+1 Shield",apply:()=>addOwned("shield",1)},
+ {icon:"💎",label:"+5 SP",apply:()=>{points+=5;}},
+ {icon:"👁",label:"+1 Peek",apply:()=>addOwned("peek",1)},
+ {icon:"❄️",label:"+1 Time Freeze",apply:()=>addOwned("freeze",1)},
+ {icon:"🏆",label:"+10 SP & 2 hints",apply:()=>{points+=10;addOwned("hint",2);}}
+];
+const todayStr=()=>new Date().toLocaleDateString("en-CA");
+const yesterdayStr=()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toLocaleDateString("en-CA");};
+function loadStreak(){try{return JSON.parse(localStorage.getItem("mm-streak")||"null")||{last:"",count:0};}catch(e){return {last:"",count:0};}}
+function streakInfo(){const st=loadStreak(),claimed=st.last===todayStr(),alive=claimed||st.last===yesterdayStr();return {claimed,count:alive?st.count:0,broken:!alive&&st.count>0};}
+
+// ---------- Tutorial ----------
+const TUT=[
+ {icon:"👆",title:"Find the pairs",text:"Tap a card to flip it, then flip a second one. Try the practice board below!",board:true},
+ {icon:"🔥",title:"Build streaks",text:"Chain matches without a miss to earn bonus SP. A miss resets your streak.",board:false},
+ {icon:"✨",title:"Power-ups",text:"Use the bar at the bottom of the game: Hint ✨, Peek 👁, Time Freeze ❄️, Shield 🛡️ and Extra Moves ➕. Buy more in the Market with SP.",board:false},
+ {icon:"🚩",title:"Checkpoints",text:"Every 3rd stage is a checkpoint. Limited-moves stages cap your moves, and timed stages race a countdown.",board:false},
+ {icon:"🚀",title:"You're ready!",text:"Match every pair to climb the journey. Good luck!",board:false}
+];
+let tutCb=null,tutI=0,tutFirst=null,tutLock=false,tutMatched=0;
+function tutDone(){return !!localStorage.getItem("mmx-tutorial");}
+function tutSet(t){$("tutText").textContent=t;}
+function startTutorial(cb){tutCb=cb||null;tutI=0;$("tutorial").classList.add("show");tutRender();}
+function finishTutorial(){localStorage.setItem("mmx-tutorial","1");$("tutorial").classList.remove("show");const cb=tutCb;tutCb=null;if(cb)cb();}
+function tutBuildBoard(){
+ const b=$("tutBoard");b.innerHTML="";tutFirst=null;tutLock=false;tutMatched=0;
+ const pick=shuffled(symbols.slice()).slice(0,2),deck=shuffled([...pick,...pick]);
+ deck.forEach(e=>{const c=document.createElement("button");c.type="button";c.className="card";c.dataset.emoji=e;c.setAttribute("aria-label","Hidden card");c.innerHTML=`<span class="inner"><span class="face back"><span>${curBack().glyph}</span></span><span class="face front">${e}</span></span>`;c.addEventListener("click",()=>tutFlip(c));b.appendChild(c);});
+}
+function tutRender(){
+ const st=TUT[tutI];
+ $("tutIcon").textContent=st.icon;$("tutTitle").textContent=st.title;tutSet(st.text);
+ $("tutDots").innerHTML=TUT.map((_,i)=>`<i class="${i===tutI?"on":""}"></i>`).join("");
+ $("tutBoard").style.display=st.board?"grid":"none";
+ if(st.board)tutBuildBoard();
+ $("tutNext").style.display=st.board?"none":"";
+ $("tutNext").textContent=tutI===TUT.length-1?"Let's play!":"Next";
+ $("tutSkip").style.display=tutI===TUT.length-1?"none":"";
+}
+function tutFlip(c){
+ if(tutLock||c.classList.contains("flipped")||c.classList.contains("matched"))return;
+ c.classList.add("flipped");sound(440,.05);haptic(6);
+ if(!tutFirst){tutFirst=c;tutSet("Now flip a second card to look for its twin.");return;}
+ const a=tutFirst;tutFirst=null;
+ if(a.dataset.emoji===c.dataset.emoji){
+  a.classList.add("matched");c.classList.add("matched");tutMatched++;sound(680,.12);haptic([12,40,22]);
+  if(tutMatched===2){tutSet("🎉 Both pairs found! That's how every stage works.");$("tutNext").style.display="";}
+  else tutSet("A match! Matching cards stay face up and earn SP 💎. Find the last pair.");
+ }else{
+  tutLock=true;tutSet("Not a pair. They flip back, so remember where each emoji was!");
+  setTimeout(()=>{a.classList.remove("flipped");c.classList.remove("flipped");tutLock=false;},800);
+ }
+}
+
+// ---------- Stars ----------
+let lastStars=0,marketTab="power";
+const starKey=n=>"mm-stars-"+n;
+const bestStars=n=>Number(localStorage.getItem(starKey(n))||0);
+function totalStars(){let t=0;for(let i=1;i<=MAX_STAGE;i++)t+=bestStars(i);return t;}
+function calcStars(){
+ if(isTimedMode()){const left=Math.max(0,timeLimit()-secs)/timeLimit();return left>=.35?3:left>=.15?2:1;}
+ const misses=Math.max(0,moves-pairs());
+ return misses<=Math.ceil(pairs()*.5)?3:misses<=Math.ceil(pairs()*1.5)?2:1;
+}
+
+// ---------- Cosmetics ----------
+const COS={
+ back:[
+  {id:"nebula",name:"Nebula",price:0,glyph:"✦",a:"#243353",b:"#16223f",edge:"#9aadea25",ink:"#8496c7"},
+  {id:"sunset",name:"Sunset",price:20,glyph:"✺",a:"#ff9a6b",b:"#c2417a",edge:"#ffd0b855",ink:"#fff1e6"},
+  {id:"mint",name:"Mint Frost",price:20,glyph:"❖",a:"#3fd6b4",b:"#1b7f8f",edge:"#c4fff055",ink:"#e6fffa"},
+  {id:"candy",name:"Candy Pop",price:25,glyph:"✿",a:"#ff7ad9",b:"#7a5cff",edge:"#ffd1f255",ink:"#fff0fb"},
+  {id:"carbon",name:"Carbon",price:30,glyph:"◆",a:"#2b2f38",b:"#14161b",edge:"#8f98a855",ink:"#9aa3b5"},
+  {id:"gold",name:"Midnight Gold",price:35,glyph:"♛",a:"#2a2340",b:"#0d0a1c",edge:"#ffd66bcc",ink:"#ffd66b"}
+ ],
+ theme:[
+  {id:"midnight",name:"Midnight",price:0,bg:"#080d1c",g1:"#30245a",g2:"#0d6470",purple:"#9278ff",cyan:"#62e7ff",acc1:"#856aff",acc2:"#3fa9ff"},
+  {id:"forest",name:"Forest",price:30,bg:"#07140f",g1:"#1b4d33",g2:"#7a6a1e",purple:"#7ee0a0",cyan:"#d4f26b",acc1:"#2fa36b",acc2:"#7fb02a"},
+  {id:"ocean",name:"Deep Ocean",price:30,bg:"#04121f",g1:"#0a3d6b",g2:"#0e7c7b",purple:"#5aa9ff",cyan:"#5ff0d4",acc1:"#2a7fff",acc2:"#14b8a6"},
+  {id:"sakura",name:"Sakura Night",price:40,bg:"#16091a",g1:"#6b2a5e",g2:"#7a3045",purple:"#ff8fd0",cyan:"#ffc2e4",acc1:"#d94fa0",acc2:"#8a5cff"},
+  {id:"ember",name:"Ember",price:40,bg:"#140a08",g1:"#6b2a0f",g2:"#5e1a3a",purple:"#ff9a5a",cyan:"#ffd36b",acc1:"#e5602a",acc2:"#c2374f"}
+ ],
+ pack:[
+  {id:"classic",name:"Classic Mix",price:0,list:symbols},
+  {id:"animals",name:"Animal Friends",price:25,list:["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🐔","🐧","🐦","🦆","🦉","🦄","🐝","🦋","🐢","🐙","🦀","🐬","🐳","🦒","🦘"]},
+  {id:"nature",name:"Wild Nature",price:25,list:["🌸","🌻","🌷","🌹","🍀","🌵","🌴","🌲","🍄","🍁","🌈","⭐","🌙","☀️","☁️","⚡","🔥","💧","❄️","🌊","🌋","🪐","🌍","🍃","🌿","🍂","🌾","🐚"]},
+  {id:"fun",name:"Game Night",price:25,list:["🎲","🎯","🎮","🎸","🎺","🥁","🎨","🎭","🎪","🎡","🎢","🏆","🎁","🎈","🎉","🧩","♟️","🎻","🎤","🎧","📚","🔭","🚀","🛸","⚽","🏀","🎳","🏓"]}
+ ]
+};
+function defCos(){return {owned:{"back:nebula":1,"theme:midnight":1,"pack:classic":1},eq:{back:"nebula",theme:"midnight",pack:"classic"}};}
+function loadCos(){try{const d=defCos(),c=JSON.parse(localStorage.getItem("mm-cos")||"{}");return {owned:Object.assign(d.owned,c.owned||{}),eq:Object.assign(d.eq,c.eq||{})};}catch(e){return defCos();}}
+let cos=loadCos();
+const saveCos=()=>localStorage.setItem("mm-cos",JSON.stringify(cos));
+const curBack=()=>COS.back.find(x=>x.id===cos.eq.back)||COS.back[0];
+const curTheme=()=>COS.theme.find(x=>x.id===cos.eq.theme)||COS.theme[0];
+const activeSymbols=()=>(COS.pack.find(x=>x.id===cos.eq.pack)||COS.pack[0]).list;
+function applyCosmetics(){
+ const r=document.documentElement.style,b=curBack(),t=curTheme();
+ r.setProperty("--back-a",b.a);r.setProperty("--back-b",b.b);r.setProperty("--back-edge",b.edge);r.setProperty("--back-ink",b.ink);
+ r.setProperty("--bg",t.bg);r.setProperty("--g1",t.g1);r.setProperty("--g2",t.g2);r.setProperty("--purple",t.purple);r.setProperty("--cyan",t.cyan);r.setProperty("--acc1",t.acc1);r.setProperty("--acc2",t.acc2);
+ const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.bg);
+ document.querySelectorAll(".card .back > span").forEach(sp=>{sp.textContent=b.glyph;});
+}
+function renderCosList(){
+ const row=(type,it)=>{
+  const have=!!cos.owned[type+":"+it.id],eq=cos.eq[type]===it.id;
+  let sw,desc;
+  if(type==="back"){sw=`<div class="swatch" style="background:linear-gradient(145deg,${it.a},${it.b});border-color:${it.edge};color:${it.ink}">${it.glyph}</div>`;desc="Card back";}
+  else if(type==="theme"){sw=`<div class="swatch theme" style="background:linear-gradient(160deg,${it.bg},${it.g1});border-color:${it.purple}66"><i style="background:${it.purple}"></i><i style="background:${it.cyan}"></i></div>`;desc="Board theme";}
+  else{sw=`<div class="swatch" style="background:#0f1a33;border-color:#ffffff22;font-size:1.25rem">${it.list[0]}</div>`;desc=it.list.slice(0,6).join(" ")+" · applies next stage";}
+  const lbl=eq?"Equipped ✓":have?"Equip":`Buy · ${it.price} 💎`,dis=eq||(!have&&points<it.price);
+  return `<div class="mk-item">${sw}<div class="mk-info"><b>${it.name}</b><span>${desc}</span><em>${have?(eq?"In use":"Owned"):it.price+" SP"}</em></div><div class="mk-buy"><button class="btn ${have?"secondary":"primary"} mk-btn" data-cos="${type}:${it.id}" ${dis?"disabled":""}>${lbl}</button></div></div>`;
+ };
+ const sec=(t,type)=>`<div class="mk-sec">${t}</div>`+COS[type].map(i=>row(type,i)).join("");
+ $("marketList").innerHTML=sec("Card backs","back")+sec("Board themes","theme")+sec("Emoji packs","pack");
+}
+function cosAction(type,id){
+ const it=COS[type].find(x=>x.id===id);if(!it)return;
+ if(cos.owned[type+":"+id]){cos.eq[type]=id;$("marketMsg").textContent=`${it.name} equipped.`;}
+ else{
+  if(points<it.price){$("marketMsg").textContent="Not enough SP.";return;}
+  points-=it.price;cos.owned[type+":"+id]=1;cos.eq[type]=id;saveWallet();updateWallet();
+  stats.cosmetic=true;saveStats();checkAchievements();$("marketMsg").textContent=`Bought & equipped ${it.name}!`;sound(700,.08);haptic(12);
+ }
+ saveCos();applyCosmetics();renderMarket();
+}
+
+// ---------- Native shell (Capacitor) & PWA ----------
+function handleBack(){
+ const open=["settingsOverlay","achOverlay","howOverlay","marketOverlay"].find(id=>$(id).classList.contains("show"));
+ if(open){$(open).classList.remove("show");return;}
+ if($("tutorial").classList.contains("show")){finishTutorial();return;}
+ if(!$("home").classList.contains("show")){goHome();return;}
+ const A=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.App;if(A&&A.exitApp)A.exitApp();
+}
+(function nativeShell(){
+ const C=window.Capacitor,A=C&&C.Plugins&&C.Plugins.App;
+ if(A&&A.addListener){
+  A.addListener("backButton",handleBack);
+  A.addListener("appStateChange",st=>{if(!st.isActive&&active&&!paused&&!introBusy)pauseGame();});
+ }
+ const native=C&&C.isNativePlatform&&C.isNativePlatform();
+ if(!native&&"serviceWorker" in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+
+// ---------- Home screen ----------
+let pendingDiscard=0,pendingTimer=null,resetArmed=false;
+function savedGame(){try{const g=JSON.parse(localStorage.getItem("mm-current-game")||"null");return g&&g.active&&g.stage?g:null;}catch(e){return null;}}
+function modeFor(n){
+ const old=stage;stage=n;let r;
+ if(isLimitedMode())r={type:"moves",icon:"👣",label:`Limited · ${moveLimit()} moves`};
+ else if(isTimedMode())r={type:"timed",icon:"⏱",label:`Timed · ${fmt(timeLimit())}`};
+ else r={type:"classic",icon:"✦",label:"Classic · no limits"};
+ r.cards=cardCount();r.pairs=pairs();stage=old;return r;
+}
+function initHomeBg(){
+ const bg=$("homeBg");if(bg.children.length)return;
+ for(let i=0;i<10;i++){const c=document.createElement("div");c.className="fcard";c.textContent=symbols[Math.floor(Math.random()*symbols.length)];
+  c.style.left=(4+i*9.6)+"%";c.style.setProperty("--t",(11+Math.random()*9)+"s");c.style.setProperty("--d",(-Math.random()*16)+"s");
+  c.style.setProperty("--r0",(-20+Math.random()*40)+"deg");c.style.setProperty("--r1",(-30+Math.random()*60)+"deg");bg.appendChild(c);}
+}
+function renderHome(){
+ unlocked=Number(localStorage.getItem(unlockKey())||1);
+ const sg=savedGame(),next=Math.min(unlocked,MAX_STAGE),target=sg?sg.stage:next,m=modeFor(target),done=Math.max(0,Math.min(unlocked-1,MAX_STAGE));
+ $("ctaMain").textContent=sg?`▶ Continue · Stage ${sg.stage}`:(unlocked>MAX_STAGE?`▶ Replay · Stage ${MAX_STAGE}`:`▶ Play · Stage ${next}`);
+ $("ctaSub").textContent=sg?`Saved game · ${sg.matches||0}/${m.pairs} pairs found`:(unlocked>MAX_STAGE?"Journey complete 🏆":(next===1?"Start your journey":"Your next challenge awaits"));
+ $("ctaChips").innerHTML=`<span class="chip">🃏 ${m.cards} cards</span><span class="chip">🧩 ${m.pairs} pairs</span><span class="chip ${m.type}">${m.icon} ${m.label}</span>`;
+ let total=0;for(let i=1;i<=MAX_STAGE;i++)total+=Number(localStorage.getItem("mm-stage-score-"+i)||0);
+ $("statCleared").textContent=`${done}/${MAX_STAGE}`;$("statScore").textContent=total.toLocaleString();
+ const cp=Math.ceil(target/3)*3;$("statCheckpoint").textContent=cp>MAX_STAGE?"—":`${modeFor(cp).icon} ${cp}`;
+ $("jStars").textContent=`★ ${totalStars()}/${MAX_STAGE*3}`;renderDaily();$("homeAchCount").textContent=`${Object.keys(ach).length}/${ACH.length} unlocked`;
+ const map=$("stageMap");map.innerHTML="";
+ for(let n=1;n<=MAX_STAGE;n++){
+  const t=document.createElement("button"),cpType=n%3===0?modeFor(n).icon:null,state=n<unlocked?"cleared":n===unlocked?"current":"locked";
+  t.type="button";t.className=`tile ${state}${cpType?" cp":""}`;t.dataset.stage=n;t.style.setProperty("--d",(n*16)+"ms");t.disabled=state==="locked";
+  const bs=Math.max(1,bestStars(n)),small=state==="cleared"?`<small class="stars">${"★".repeat(bs)}${"☆".repeat(3-bs)}</small>`:`<small>${state==="current"?"▶":"🔒"}</small>`;
+  t.innerHTML=`<span>${n}</span>${small}${cpType?`<em class="cpb">${cpType}</em>`:""}`;
+  t.setAttribute("aria-label",`Stage ${n}, ${state}${cpType?", checkpoint":""}`);map.appendChild(t);
+ }
+ $("homeNote").textContent=sg?`Saved game on Stage ${sg.stage}. Starting another stage will replace it.`:"";
+ updateWallet();
+}
+function showHome(){initHomeBg();renderHome();$("home").classList.add("show");document.body.classList.add("at-home");$("home").scrollTop=0;}
+function hideHome(){$("home").classList.remove("show");document.body.classList.remove("at-home");}
+function playStage(n){if(!tutDone()){startTutorial(()=>playStage(n));return;}hideHome();showWelcome(n);if(active&&paused){$("welcome").classList.remove("show");$("pauseOverlay").classList.add("show");}}
+function goHome(){
+ introToken++;introBusy=false;
+ if(active&&!paused){paused=true;clearInterval(timer);timer=null;saveGame();}
+ ["welcome","stageClear","stageFail","pauseOverlay","marketOverlay","howOverlay","settingsOverlay","achOverlay","tutorial"].forEach(id=>$(id).classList.remove("show"));
+ $("streakToast").textContent="";showHome();
+}
+function renderDaily(){
+ const info=streakInfo(),c=info.count,done=info.claimed?((c-1)%7)+1:(c%7),next=DAILY[done%7];
+ $("dailyCard").classList.toggle("claimed",info.claimed);$("dailyBtn").disabled=info.claimed;$("dailyBtn").textContent=info.claimed?"Claimed ✓":"Claim";
+ $("dailyTitle").textContent=info.claimed?`🔥 ${c}-day streak`:(c>0?`Keep your ${c}-day streak!`:"Daily gift ready!");
+ $("dailySub").textContent=info.claimed?(done<7?`Tomorrow: ${next.label}`:"Full week done! Tomorrow starts a new cycle."):(info.broken?`Streak reset. Today: ${next.label}`:`Today: ${next.label}`);
+ $("streakRow").innerHTML=DAILY.map((d,i)=>{const st=i<done?"done":(i===done?(info.claimed?"tomorrow":"today"):"");return `<div class="dcell ${st}" title="${d.label}"><small>D${i+1}</small>${i<done?"✓":d.icon}</div>`;}).join("");
+}
+function claimDaily(){
+ const info=streakInfo();if(info.claimed)return;
+ const count=info.count+1,r=DAILY[(count-1)%7];
+ r.apply();localStorage.setItem("mm-streak",JSON.stringify({last:todayStr(),count}));saveWallet();
+ stats.bestDaily=Math.max(stats.bestDaily||0,count);saveStats();
+ celebrate();haptic([20,40,20]);sound(700,.1);setTimeout(()=>sound(900,.12),80);
+ renderHome();$("homeNote").textContent=`🎁 Day ${((count-1)%7)+1} reward: ${r.label}`;checkAchievements();
+}
+$("homePlayBtn").addEventListener("click",()=>{const sg=savedGame();playStage(sg?sg.stage:Math.min(unlocked,MAX_STAGE));});
+$("stageMap").addEventListener("click",e=>{
+ const t=e.target.closest(".tile");if(!t||t.disabled)return;const n=Number(t.dataset.stage),sg=savedGame();
+ if(sg&&sg.stage!==n){
+  if(pendingDiscard!==n){pendingDiscard=n;$("homeNote").textContent=`Tap Stage ${n} again to discard your saved Stage ${sg.stage} game.`;clearTimeout(pendingTimer);pendingTimer=setTimeout(()=>{pendingDiscard=0;renderHome();},3500);return;}
+  localStorage.removeItem("mm-current-game");
+ }
+ pendingDiscard=0;playStage(n);
+});
+$("dailyBtn").addEventListener("click",claimDaily);
+$("homeConvertBtn").addEventListener("click",openMarket);$("homeMarketBtn").addEventListener("click",openMarket);
+$("homeSoundBtn").addEventListener("click",()=>$("soundBtn").click());
+const openHow=()=>$("howOverlay").classList.add("show");
+$("homeHowBtn").addEventListener("click",openHow);$("homeHowLink").addEventListener("click",openHow);
+$("closeHowBtn").addEventListener("click",()=>$("howOverlay").classList.remove("show"));
+$("howOverlay").addEventListener("click",e=>{if(e.target===$("howOverlay"))$("howOverlay").classList.remove("show");});
+$("homeResetBtn").addEventListener("click",()=>{
+ const b=$("homeResetBtn");
+ if(!resetArmed){resetArmed=true;b.textContent="Tap again to confirm";setTimeout(()=>{resetArmed=false;b.textContent="Reset journey";},3000);return;}
+ resetArmed=false;b.textContent="Reset journey";resetJourney();$("welcome").classList.remove("show");showHome();$("homeNote").textContent="Journey reset. Fresh start!";
+});
+$("homeSettingsBtn").addEventListener("click",openSettings);
+$("pauseSettingsBtn").addEventListener("click",openSettings);
+$("closeSettingsBtn").addEventListener("click",()=>$("settingsOverlay").classList.remove("show"));
+$("settingsOverlay").addEventListener("click",e=>{if(e.target===$("settingsOverlay"))$("settingsOverlay").classList.remove("show");});
+$("setMusic").addEventListener("change",e=>{settings.music=e.target.checked;saveSettings();if(settings.music){audioUnlocked=true;startMusic();}});
+$("setVol").addEventListener("input",e=>{settings.musicVol=Number(e.target.value)/100;saveSettings();});
+$("setSfx").addEventListener("change",e=>{settings.sfx=e.target.checked;saveSettings();if(settings.sfx)sound(600);});
+$("setHaptics").addEventListener("change",e=>{settings.haptics=e.target.checked;saveSettings();if(settings.haptics)haptic(25);});
+$("setReduce").addEventListener("change",e=>{settings.reduceMotion=e.target.checked;saveSettings();});
+$("replayTutBtn").addEventListener("click",()=>startTutorial(null));
+$("homeAchBtn").addEventListener("click",openAch);
+$("closeAchBtn").addEventListener("click",()=>$("achOverlay").classList.remove("show"));
+$("achOverlay").addEventListener("click",e=>{if(e.target===$("achOverlay"))$("achOverlay").classList.remove("show");});
+$("tutNext").addEventListener("click",()=>{if(tutI<TUT.length-1){tutI++;tutRender();}else finishTutorial();});
+$("tutSkip").addEventListener("click",finishTutorial);
+document.querySelectorAll(".home-link").forEach(b=>b.addEventListener("click",goHome));
+unlocked=Number(localStorage.getItem(unlockKey())||1);stage=1;initFooter();applySettings();applyCosmetics();showHome();updateWallet();
+})();
+</script>
+</body>
+</html>
